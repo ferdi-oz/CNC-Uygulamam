@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>AMELECAD — Mobile (Production)</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AMELECAD">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{
+  --bg:#041018; --panel:#07242c; --accent1:#00d6b8; --accent2:#0aaeff;
+  --glass: rgba(255,255,255,0.03); --muted:#9fdcdc; --danger:#ff6b6b;
+  --radius:14px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,var(--bg),#02121a);color:#eaffff;-webkit-font-smoothing:antialiased}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));backdrop-filter:blur(3px)}
+#brand{font-weight:900;font-size:18px;color:var(--accent1);text-shadow:0 0 10px rgba(0,214,184,0.08)}
+#lang{background:#022; color:#dff; padding:6px;border-radius:8px;border:0}
+main{padding:12px;display:flex;flex-direction:column;gap:12px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.008)); border-radius:var(--radius); padding:12px; box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media (min-width:520px){ .grid{grid-template-columns:repeat(4,1fr)} }
+.btn{display:flex;align-items:center;justify-content:center;padding:12px;border-radius:10px;border:0;cursor:pointer;font-weight:800;color:#001a1a;background:linear-gradient(135deg,var(--accent2),var(--accent1));box-shadow:0 8px 26px rgba(0,0,0,0.45)}
+.btn.secondary{background:linear-gradient(135deg,#113e4a,#06323a); color:#eaffff}
+.btn.touch{padding:14px;font-size:15px}
+.small{font-size:12px;color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
+label{font-size:14px;color:#cfecec;min-width:120px}
+input[type=number], select, input[type=text]{padding:10px;border-radius:8px;border:0;background:rgba(255,255,255,0.02);color:#eaffff;min-width:120px;font-size:14px}
+pre{background:rgba(0,0,0,0.3);padding:12px;border-radius:10px;color:#e6ffff;white-space:pre-wrap;font-family:var(--mono);font-size:13px;max-height:360px;overflow:auto}
+.tools{display:flex;gap:8px;margin-top:8px}
+.tool{flex:1;padding:10px;border-radius:8px;border:0;background:linear-gradient(90deg,#123,#062);color:#dff;font-weight:700}
+.footer{font-size:12px;color:#8fbfb8;margin-top:6px}
+.hidden{display:none}
+.notice{background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); padding:8px;border-radius:8px;font-size:13px;color:var(--muted)}
+/* transitions */
+.fade{transition:transform .18s ease,opacity .18s ease}
+.btn:active{transform:translateY(2px)}
+.help{font-size:12px;color:#9fdcdc}
+</style>
+</head>
+<body>
+<header>
+  <div id="brand">AMEL‑E.CAD</div>
+  <select id="lang" aria-label="language">
+    <option value="tr">Türkçe</option>
+    <option value="en">English</option>
+    <option value="fi">Suomi</option>
+  </select>
+</header>
+
+<main>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><strong>Mobil — Profesyonel Üretim Modu</strong><div class="small">Ana menüden işlem seçin</div></div>
+      <div class="small">G41/G42 otomatik</div>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <button class="btn touch" data-op="turn">Tornalama</button>
+      <button class="btn touch" data-op="thread">Diş Açma</button>
+      <button class="btn touch" data-op="channel">Kanal Açma</button>
+      <button class="btn touch" data-op="chamfer">Pah Kırma</button>
+      <button class="btn touch" data-op="radius">Radius</button>
+      <button class="btn touch secondary" data-op="drill">Delik Delme</button>
+      <button class="btn touch secondary" data-op="external">Dış Açma</button>
+      <button class="btn touch secondary" id="btnCopy">G-kod Kopyala</button>
+      <button class="btn touch secondary" id="btnDL">Program İndir (.nc)</button>
+    </div>
+  </section>
+
+  <section class="card" id="work">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong id="title">Hoş geldin</strong>
+      <button id="back" class="btn secondary hidden">← Ana Menü</button>
+    </div>
+
+    <div id="form" style="margin-top:10px">
+      <div class="notice">İşlem seçin. Her hesaplama profesyonel G-kod formatında çıktı verir.</div>
+    </div>
+
+    <pre id="gout">G‑kod burada görünecek...</pre>
+
+    <div class="tools">
+      <button class="tool" id="copyBtn">Kopyala</button>
+      <button class="tool" id="saveBtn">İndir .nc</button>
+    </div>
+
+    <div class="footer">iPhone: Safari → Paylaş → "Ana Ekrana Ekle" ile uygulama gibi kullanabilirsiniz.</div>
+  </section>
+</main>
+
+<script>
+/* ---------- Utilities ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function fmt(n){
+  if(n===null||n===undefined||isNaN(Number(n))) return n;
+  let num = Number(n);
+  num = Math.round(num * 100) / 100;
+  if(Number.isInteger(num)) return String(num);
+  // toFixed might produce trailing zeros — remove them
+  return num.toFixed(2).replace(/\.?0+$/,'');
+}
+
+/* ---------- State ---------- */
+let state = { lang: 'tr', op: null };
+
+/* ---------- Elements ---------- */
+const langSel = $('#lang');
+const menuBtns = $$('[data-op]');
+const form = $('#form');
+const gout = $('#gout');
+const backBtn = $('#back');
+const titleEl = $('#title');
+const copyBtn = $('#copyBtn');
+const saveBtn = $('#saveBtn');
+const btnDL = $('#btnDL');
+const btnCopy = $('#btnCopy');
+
+/* ---------- Language map (simple) ---------- */
+const L = {
+  tr: {
+    calc: 'Hesapla', back: 'Ana Menü',
+    startZ: 'Başlangıç Z', endZ: 'Bitiş Z', startX: 'Başlangıç Çap', endX: 'Bitiş Çap',
+    length: 'Kanal Boyu', tool: 'Kalem Ucu', chamfer: 'Pah (mm)', angle: 'Açı (°)',
+    radius: 'R (mm)', drillDia: 'Delik Çapı (mm)', drillDepth: 'Delik Derinliği (mm)', toolNo: 'Takım No',
+    pitch: 'Adım (mm)', feed: 'F (mm/rev)', rpm: 'S (rpm)'
+  },
+  en: {
+    calc: 'Calculate', back: 'Main Menu',
+    startZ: 'Start Z', endZ: 'End Z', startX: 'Start Dia', endX: 'End Dia',
+    length: 'Groove Len', tool: 'Tool', chamfer: 'Chamfer (mm)', angle: 'Angle (°)',
+    radius: 'R (mm)', drillDia: 'Drill Dia (mm)', drillDepth: 'Drill Depth (mm)', toolNo: 'Tool No',
+    pitch: 'Pitch (mm)', feed: 'F (mm/rev)', rpm: 'S (rpm)'
+  },
+  fi: {
+    calc: 'Laske', back: 'Päävalikko',
+    startZ: 'Alku Z', endZ: 'Loppu Z', startX: 'Alkuhalkaisija', endX: 'Loppuhalkaisija',
+    length: 'Uran pituus', tool: 'Työkalun pituus', chamfer: 'Pah (mm)', angle: 'Kulma (°)',
+    radius: 'R (mm)', drillDia: 'Reiän halkaisija (mm)', drillDepth: 'Reiän syvyys (mm)', toolNo: 'Työkalun nro',
+    pitch: 'Pitch (mm)', feed: 'F (mm/rev)', rpm: 'S (rpm)'
+  }
+};
+
+/* ---------- Event wiring ---------- */
+langSel.addEventListener('change', ()=>{ state.lang = langSel.value; });
+menuBtns.forEach(b => b.addEventListener('click', ()=> openOp(b.dataset.op)));
+backBtn.addEventListener('click', ()=> { state.op = null; renderMenu(); });
+copyBtn.addEventListener('click', ()=> { navigator.clipboard?.writeText(gout.textContent).then(()=> alert('Kopyalandı')); });
+saveBtn.addEventListener('click', saveFile);
+btnDL.addEventListener('click', saveFile);
+btnCopy.addEventListener('click', ()=> { navigator.clipboard?.writeText(gout.textContent).then(()=> alert('G-kod kopyalandı'))});
+
+/* ---------- Open operation ---------- */
+function openOp(op){
+  state.op = op;
+  titleEl.textContent = opToTitle(op);
+  backBtn.classList.remove('hidden');
+  renderOp(op);
+}
+
+/* ---------- Helpers ---------- */
+function opToTitle(op){
+  const map = {turn:'Tornalama', thread:'Diş Açma', channel:'Kanal Açma', chamfer:'Pah Kırma', radius:'Radius', drill:'Delik Delme', external:'Dış Açma'};
+  return map[op] || op;
+}
+function mkRow(label, id, val=0, step='0.01'){
+  return `<div class="row"><label>${label}:</label><input id="${id}" type="number" step="${step}" value="${val}"></div>`;
+}
+function mkBtn(text, id='calcBtn'){ return `<div style="margin-top:10px"><button class="btn touch" id="${id}">${text}</button></div>`; }
+
+/* ---------- Render menu back ---------- */
+function renderMenu(){
+  titleEl.textContent = 'Hoş geldin';
+  backBtn.classList.add('hidden');
+  form.innerHTML = `<div class="notice">İşlem seçin</div>`;
+  gout.textContent = 'G‑kod burada görünecek...';
+}
+
+/* ---------- Render operation forms ---------- */
+function renderOp(op){
+  const t = L[state.lang];
+  if(op === 'turn'){
+    form.innerHTML = `
+      <div class="small">İç / Dış / Finish seçeneklerinden birini seçin</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn touch" id="turn_in">İç Tornalama</button>
+        <button class="btn touch" id="turn_out">Dış Tornalama</button>
+        <button class="btn touch" id="turn_fin">Finish</button>
+      </div>
+    `;
+    $('#turn_in').addEventListener('click', ()=> renderTurning('inner'));
+    $('#turn_out').addEventListener('click', ()=> renderTurning('outer'));
+    $('#turn_fin').addEventListener('click', ()=> renderTurning('finish'));
+    return;
+  }
+  if(op === 'thread'){
+    form.innerHTML = `
+      <div style="display:flex;gap:8px"><button class="btn touch" id="thr_in">İç Diş</button><button class="btn touch" id="thr_out">Dış Diş</button></div>
+      <div class="small" style="margin-top:8px">Dış diş: başlangıçtan 2mm önce, bitişten 2mm sonra uygulanır.</div>
+    `;
+    $('#thr_in').addEventListener('click', ()=> renderThread('inner'));
+    $('#thr_out').addEventListener('click', ()=> renderThread('outer'));
+    return;
+  }
+  if(op === 'channel'){
+    form.innerHTML = `
+      ${mkRow('Başlangıç Z','chan_sZ', -30)}
+      ${mkRow('Kanal Boyu (mm)','chan_len', 8)}
+      ${mkRow('Kalem Ucu (mm)','chan_tool', 3)}
+      ${mkBtn(t.calc,'chan_calc')}
+    `;
+    $('#chan_calc').addEventListener('click', calculateChannel);
+    return;
+  }
+  if(op === 'chamfer'){
+    form.innerHTML = `
+      ${mkRow('Çap X (mm)','ch_X', 40)}
+      ${mkRow('Pah (mm)','ch_pah', 1)}
+      ${mkRow('Açı (°)','ch_angle', 45)}
+      ${mkBtn(t.calc,'ch_calc')}
+    `;
+    $('#ch_calc').addEventListener('click', calculateChamfer);
+    return;
+  }
+  if(op === 'radius'){
+    form.innerHTML = `
+      ${mkRow('Çap X (mm)','rad_X', 40)}
+      ${mkRow('Z (mm)','rad_Z', 0)}
+      ${mkRow('R (mm)','rad_R', 5)}
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="btn touch" id="rad_cw">Saat Yönü</button><button class="btn touch" id="rad_ccw">Saat Yönü Tersi</button></div>
+    `;
+    $('#rad_cw').addEventListener('click', ()=> calculateRadius('cw'));
+    $('#rad_ccw').addEventListener('click', ()=> calculateRadius('ccw'));
+    return;
+  }
+  if(op === 'drill'){
+    form.innerHTML = `
+      ${mkRow('Delik Çapı (mm)','dr_dia', 25)}
+      ${mkRow('Derinlik (mm)','dr_depth', 62)}
+      <div class="row"><label>Takım No</label><input id="dr_tool" type="number" step="1" value="1010"></div>
+      <div class="row"><label>Malzeme</label><select id="dr_mat"><option>Steel</option><option>Aluminium</option><option>Brass</option></select></div>
+      ${mkBtn(t.calc,'dr_calc')}
+    `;
+    $('#dr_calc').addEventListener('click', calculateDrill);
+    return;
+  }
+  if(op === 'external'){
+    form.innerHTML = `
+      ${mkRow('Başlangıç Z','ext_sZ', 2)}
+      ${mkRow('Dış Boyu (mm)','ext_len', 13)}
+      ${mkBtn(L[state.lang].calc,'ext_calc')}
+    `;
+    $('#ext_calc').addEventListener('click', calculateExternal);
+    return;
+  }
+}
+
+/* ---------- Calculation implementations (professional G-code outputs) ---------- */
+
+function calculateChannel(){
+  const sZ = parseFloat($('#chan_sZ').value);
+  const len = parseFloat($('#chan_len').value);
+  const tool = parseFloat($('#chan_tool').value);
+  // realStart = sZ + tool  (e.g. -30 + 3 => -27)
+  // realEnd = sZ - len    (e.g. -30 - 8 => -38)
+  const realStart = sZ + tool;
+  const realEnd = sZ - len;
+  const code = `(--- KANAL AÇMA ---)
+G50 S2500
+G97 S600 M3
+T0505
+; Kullanıcı BaşlangıçZ=${fmt(sZ)} Kalem=${fmt(tool)} KanalBoyu=${fmt(len)}
+; Gerçek Başlangıç Z = ${fmt(realStart)} (sZ + kalem)
+; Gerçek Bitiş Z = ${fmt(realEnd)} (sZ - kanal boyu)
+G0 X42.00 Z${fmt(realStart)}
+G75 R0.05
+G75 X40.00 Z${fmt(realEnd)} P700 Q400 F0.10
+G0 X100 Z100
+M30`;
+  gout.textContent = code;
+}
+
+/* Chamfer (Pah) */
+function calculateChamfer(){
+  const X = parseFloat($('#ch_X').value);
+  const pah = parseFloat($('#ch_pah').value);
+  const angle = parseFloat($('#ch_angle').value);
+  // Başlangıç = X - ((pah * 2) + 2)
+  const startX = X - ((pah * 2) + 2);
+  const code = `(--- PAH KIRMA ---)
+G50 S2500
+G96 S160 M3
+; Kullanıcı Çap=${fmt(X)} Pah=${fmt(pah)} Açı=${fmt(angle)}
+; Hesap Başlangıç Çap = ${fmt(startX)} (X - ((pah*2)+2))
+G0 X${fmt(X)} Z0
+G1 X${fmt(startX)} Z-1 F0.2
+G0 X100 Z100
+M30`;
+  gout.textContent = code;
+}
+
+/* Radius */
+function calculateRadius(dir){
+  const X = parseFloat($('#rad_X').value);
+  const Z = parseFloat($('#rad_Z').value);
+  const R = parseFloat($('#rad_R').value);
+  // Z start = Z - R ; X end = X - 2*R
+  const startZ = Z - R;
+  const endX = X - 2 * R;
+  const cmd = dir === 'cw' ? 'G2' : 'G3';
+  const code = `(--- RADIUS ${dir==='cw'?'SAAT YÖNÜ':'SAAT YÖNÜ TERSİ'} ---)
+G50 S2500
+G96 S160 M3
+; Kullanıcı X=${fmt(X)} Z=${fmt(Z)} R=${fmt(R)}
+; Gerçek Başlangıç Z = Z - R = ${fmt(startZ)}
+; X bitiş = X - 2*R = ${fmt(endX)}
+G0 X${fmt(X)} Z${fmt(Z)}
+${cmd} X${fmt(endX)} Z${fmt(startZ)} R${fmt(R)}
+G0 X100 Z100
+M30`;
+  gout.textContent = code;
+}
+
+/* Thread (Diş Açma) professional: startZ user + pre/post 2mm */
+function calculateThread(kind){
+  const startX = parseFloat($('#th_startX').value);
+  const userStartZ = parseFloat($('#th_startZ').value);
+  const len = parseFloat($('#th_len').value);
+  const pitch = parseFloat($('#th_pitch').value);
+  const S = parseFloat($('#th_S').value) || 160;
+  const F = parseFloat($('#th_F').value) || pitch;
+  // compute extents: userStartZ (where thread zone starts), end = startZ - len
+  const userEndZ = userStartZ - len;
+  const pre = 2.0, post = 2.0;
+  const codeStartZ = userStartZ + pre; // start 2mm before
+  const codeEndZ = userEndZ - post; // end 2mm after (more negative)
+  const tel = kind === 'inner' ? 'G41' : 'G42';
+  const code = `(--- DİŞ AÇMA: ${kind==='inner'?'İÇ':'DIŞ'} ---)
+G50 S2500
+G96 S${fmt(S)} M3
+T0303
+; BaşlangıçÇap=${fmt(startX)} Kullanıcı BaşlangıçZ=${fmt(userStartZ)} Diş Boyu=${fmt(len)}
+; Kodda başlangıç = ${fmt(codeStartZ)} , bitiş = ${fmt(codeEndZ)} (2mm pre/post eklendi)
+; Telafi: ${tel}
+G0 X${fmt(startX)} Z${fmt(codeStartZ)} ${tel}
+G76 P010060 Q150 R0.05
+G76 X${fmt(startX)} Z${fmt(codeEndZ)} P1500 Q150 F${fmt(pitch)}
+G0 X100 Z100
+M30`;
+  gout.textContent = code;
+}
+
+/* Drill (manual G1 professional) */
+function calculateDrill(){
+  const D = parseFloat($('#dr_dia').value);
+  const depth = parseFloat($('#dr_depth').value);
+  const tool = parseInt($('#dr_tool').value) || 1010;
+  const mat = $('#dr_mat').value || 'Steel';
+  let Sv = 60;
+  if(mat === 'Aluminium') Sv = 200;
+  else if(mat === 'Brass') Sv = 120;
+  const S = Math.round((1000 * Sv) / (Math.PI * D));
+  const Sclamped = Math.max(100, Math.min(6000, S));
+  let F = Math.round((0.004 * D) * 1000) / 1000;
+  if(F <= 0) F = 0.05;
+  const code = `(--- DELİK DELME ---)
+; Delik çapı=${fmt(D)} mm, Derinlik=${fmt(depth)} mm, Malzeme=${mat}
+; Surface speed=${fmt(Sv)} m/min → S=${fmt(Sclamped)} rpm ; F=${fmt(F)} mm/rev
+G0 X200 Z200 G40 M9
+G97 S${fmt(Sclamped)} T${tool} M3
+G0 X0 Z5 M8
+G1 Z-${fmt(depth)} F${fmt(F)}
+G0 Z4 F0.3
+G0 X200 Z200
+M9
+M30`;
+  gout.textContent = code;
+}
+
+/* External (Dış Açma) professional: start 2mm before, end 2mm after */
+function calculateExternal(){
+  const sZ = parseFloat($('#ext_sZ').value);
+  const len = parseFloat($('#ext_len').value);
+  const workStart = sZ - 2;
+  const workEnd = (sZ - len) + 2;
+  const code = `(--- DIŞ AÇMA ---)
+; Kullanıcı BaşlangıçZ=${fmt(sZ)} Dış boyu=${fmt(len)}
+; İşlem başlangıcı = ${fmt(workStart)} (2mm önce)
+; İşlem bitiş = ${fmt(workEnd)} (2mm sonra)
+G50 S2500
+G96 S160 M3
+T0101
+G0 X${fmt(sZ)} Z${fmt(workStart)}
+G1 Z${fmt(workEnd)} F1.0
+G0 X100 Z100
+M30`;
+  gout.textContent = code;
+}
+
+/* ---------- event wiring for thread/turn forms created dynamically ---------- */
+function renderThread(kind){
+  // helper to create form
+  form.innerHTML = `
+    ${mkRow('Üst Çap (mm)','th_startX',42)}
+    ${mkRow('Başlangıç Z (mm)','th_startZ',2)}
+    ${mkRow('Diş Boyu (mm)','th_len',20)}
+    <div class="row"><label>Pitch (mm)</label><input id="th_pitch" type="number" step="0.01" value="1.5"></div>
+    <div class="row"><label>S (rpm)</label><input id="th_S" type="number" step="1" value="160"></div>
+    <div class="row"><label>F (feed)</label><input id="th_F" type="number" step="0.01" value="1.5"></div>
+    ${mkBtn(L[state.lang].calc,'th_calc')}
+  `;
+  $('#th_calc').addEventListener('click', ()=> calculateThread(kind));
+}
+
+function renderTurning(kind){
+  form.innerHTML = `
+    ${mkRow('Başlangıç Z','t_sZ',2)}
+    ${mkRow('Bitiş Z','t_eZ',-60)}
+    ${mkRow('Başlangıç Çap','t_sX',62)}
+    ${mkRow('Bitiş Çap','t_eX',56)}
+    <div class="row"><label>S (rpm)</label><input id="t_S" type="number" step="1" value="160"></div>
+    <div class="row"><label>F (mm/rev)</label><input id="t_F" type="number" step="0.01" value="1.5"></div>
+    ${mkBtn(L[state.lang].calc,'t_calc')}
+  `;
+  $('#t_calc').addEventListener('click', ()=> calculateTurning(kind));
+}
+
+/* Turning calculation */
+function calculateTurning(kind){
+  const sZ = parseFloat($('#t_sZ').value);
+  const eZ = parseFloat($('#t_eZ').value);
+  const sX = parseFloat($('#t_sX').value);
+  const eX = parseFloat($('#t_eX').value);
+  const S = parseFloat($('#t_S').value) || 160;
+  const F = parseFloat($('#t_F').value) || 1.5;
+  const tel = kind === 'inner' ? 'G41' : 'G42';
+  const U = eX - sX;
+  const W = eZ - sZ;
+  const code = `(--- ${kind==='inner'?'İÇ':'DIŞ'} TORNALAMA ---)
+G50 S2500
+G96 S${fmt(S)} M3
+; Telafi: ${tel}
+; U=${fmt(U)} W=${fmt(W)} S=${fmt(sX)} F=${fmt(F)}
+T0101
+G0 X${fmt(sX)} Z${fmt(sZ)} ${tel}
+G1 X${fmt(eX)} Z${fmt(eZ)} F${fmt(F)}
+G40 G0 X100 Z100
+M30`;
+  gout.textContent = code;
+}
+
+/* utilities to make rows/buttons available to dynamic forms */
+function mkRow(label,id,val=0,step='0.01'){ return `<div class="row"><label>${label}</label><input id="${id}" type="number" step="${step}" value="${val}"></div>`; }
+function mkBtn(text,id='calcBtn'){ return `<div style="margin-top:10px"><button class="btn touch" id="${id}">${text}</button></div>`; }
+
+/* ---------- Save file helper ---------- */
+function saveFile(){
+  const blob = new Blob([gout.textContent], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'program.nc';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+/* ---------- Init ---------- */
+document.addEventListener('DOMContentLoaded', ()=> {
+  renderMenu();
+  state.lang = 'tr';
+  langSel.value = 'tr';
+});
+</script>
+</body>
+</html>
