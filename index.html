@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>AMELECAD — Mobile (Production)</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AMELECAD">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{
+  --bg:#041018; --panel:#07242c; --accent1:#00d6b8; --accent2:#0aaeff;
+  --glass: rgba(255,255,255,0.03); --muted:#9fdcdc; --danger:#ff6b6b;
+  --radius:14px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,var(--bg),#02121a);color:#eaffff;-webkit-font-smoothing:antialiased}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));backdrop-filter:blur(3px)}
+#brand{font-weight:900;font-size:18px;color:var(--accent1);text-shadow:0 0 10px rgba(0,214,184,0.08)}
+#lang{background:#022; color:#dff; padding:6px;border-radius:8px;border:0}
+main{padding:12px;display:flex;flex-direction:column;gap:12px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.008)); border-radius:var(--radius); padding:12px; box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media (min-width:520px){ .grid{grid-template-columns:repeat(4,1fr)} }
+.btn{display:flex;align-items:center;justify-content:center;padding:12px;border-radius:10px;border:0;cursor:pointer;font-weight:800;color:#001a1a;background:linear-gradient(135deg,var(--accent2),var(--accent1));box-shadow:0 8px 26px rgba(0,0,0,0.45)}
+.btn.secondary{background:linear-gradient(135deg,#113e4a,#06323a); color:#eaffff}
+.btn.touch{padding:14px;font-size:15px}
+.small{font-size:12px;color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
+label{font-size:14px;color:#cfecec;min-width:120px}
+input[type=number], select, input[type=text]{padding:10px;border-radius:8px;border:0;background:rgba(255,255,255,0.02);color:#eaffff;min-width:120px;font-size:14px}
+pre{background:rgba(0,0,0,0.3);padding:12px;border-radius:10px;color:#e6ffff;white-space:pre-wrap;font-family:var(--mono);font-size:13px;max-height:360px;overflow:auto}
+.tools{display:flex;gap:8px;margin-top:8px}
+.tool{flex:1;padding:10px;border-radius:8px;border:0;background:linear-gradient(90deg,#123,#062);color:#dff;font-weight:700}
+.footer{font-size:12px;color:#8fbfb8;margin-top:6px}
+.hidden{display:none}
+.notice{background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); padding:8px;border-radius:8px;font-size:13px;color:var(--muted)}
+/* transitions */
+.fade{transition:transform .18s ease,opacity .18s ease}
+.btn:active{transform:translateY(2px)}
+.help{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div id="brand">AMEL‑E.CAD</div>
+  <select id="lang" aria-label="language">
+    <option value="tr">Türkçe</option>
+    <option value="en">English</option>
+    <option value="fi">Suomi</option>
+  </select>
+</header>
+
+<main>
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><strong>Mobil — Profesyonel Üretim Modu</strong><div class="small">Ana menüden işlem seçin</div></div>
+      <div class="small">G41/G42 otomatik</div>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <button class="btn touch" data-op="turn">Tornalama</button>
+      <button class="btn touch" data-op="thread">Diş Açma</button>
+      <button class="btn touch" data-op="channel">Kanal Açma</button>
+      <button class="btn touch" data-op="chamfer">Pah Kırma</button>
+      <button class="btn touch" data-op="radius">Radius</button>
+      <button class="btn touch secondary" data-op="drill">Delik Delme</button>
+      <button class="btn touch secondary" data-op="external">Dış Açma</button>
+      <button class="btn touch secondary" id="btnCopy">G-kod Kopyala</button>
+      <button class="btn touch secondary" id="btnDL">Program İndir (.nc)</button>
+    </div>
+  </section>
+
+  <section class="card" id="work">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong id="title">Hoş geldin</strong>
+      <button id="back" class="btn secondary hidden">← Ana Menü</button>
+    </div>
+
+    <div id="form" style="margin-top:10px">
+      <div class="notice">İşlem seçin. Her hesaplama profesyonel G-kod formatında çıktı verir.</div>
+    </div>
+
+    <pre id="gout">G‑kod burada görünecek...</pre>
+
+    <div class="tools">
+      <button class="tool" id="copyBtn">Kopyala</button>
+      <button class="tool" id="saveBtn">İndir .nc</button>
+    </div>
+
+    <div class="footer">iPhone: Safari → Paylaş → "Ana Ekrana Ekle" ile uygulama gibi kullanabilirsiniz.</div>
+  </section>
+</main>
+
+<script>
+/* ---------- Utilities ---------- */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function fmt(n){
+  if(n===null||n===undefined||isNaN(Number(n))) return n;
+  let num = Number(n);
+  num = Math.round(num * 100) / 100;
+  if(Number.isInteger(num)) return String(num);
+  // toFixed might produce trailing zeros — remove them
+  return num.toFixed(2).replace(/\.0+$/,'');
+}
+
+/* ---------- State ---------- */
+let state = { lang: 'tr', op: null };
+
+/* ---------- Elements ---------- */
+const langSel = $('#lang');
+const menuBtns = $$('[data-op]');
+const form = $('#form');
+const gout = $('#gout');
+const backBtn = $('#back');
+const titleEl = $('#title');
+const copyBtn = $('#copyBtn');
+const saveBtn = $('#saveBtn');
+const btnDL = $('#btnDL');
+const btnCopy = $('#btnCopy');
+
+/* ---------- Language map (simple) ---------- */
+const L = {
+  tr: {
+    calc: 'Hesapla', back: 'Ana Menü',
+    startZ: 'Başlangıç Z', endZ: 'Bitiş Z', startX: 'Başlangıç Çap', endX: 'Bitiş Çap',
+    length: 'Kanal Boyu', tool: 'Kalem Ucu', chamfer: 'Pah (mm)', angle: 'Açı (°)',
+    radius: 'R (mm)', drillDia: 'Delik Çapı (mm)', drillDepth: 'Delik Derinliği (mm)', toolNo: 'Takım No',
+    pitch: 'Adım (mm)', feed: 'F (mm/rev)', rpm: 'S (rpm)'
+  },
+  en: {
+    calc: 'Calculate', back: 'Main Menu',
+    startZ: 'Start Z', endZ: 'End Z', startX: 'Start Dia', endX: 'End Dia',
+    length: 'Groove Len', tool: 'Tool', chamfer: 'Chamfer (mm)', angle: 'Angle (°)',
+    radius: 'R (mm)', drillDia: 'Drill Dia (mm)', drillDepth: 'Drill Depth (mm)', toolNo: 'Tool No',
+    pitch: 'Pitch (mm)', feed: 'F (mm/rev)', rpm: 'S (rpm)'
+  },
+  fi: {
+    calc: 'Laske', back: 'Päävalikko',
+    startZ: 'Alku Z', endZ: 'Loppu Z', startX: 'Alkuhalkaisija', endX: 'Loppuhalkaisija',
+    length: 'Uran pituus', tool: 'Työkalun pituus', chamfer: 'Pah (mm)', angle: 'Kulma (°)',
+    radius: 'R (mm)', drillDia: 'Reiän halkaisija (mm)', drillDepth: 'Reiän syvyys (mm)', toolNo: 'Työkalun nro',
+    pitch: 'Pitch (mm)', feed: 'F (mm/rev)', rpm: 'S (rpm)'
+  }
+};
+
+/* ---------- Event wiring ---------- */
+langSel.addEventListener('change', ()=>{ state.lang = langSel.value; });
+menuBtns.forEach(b => b.addEventListener('click', ()=> openOp(b.dataset.op)));
+backBtn.addEventListener('click', ()=> { state.op = null; renderMenu(); });
+c...
